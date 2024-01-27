@@ -10,7 +10,7 @@ __pragma__('noalias', 'type')
 __pragma__('noalias', 'update')
 
 
-def run_harvester(creep):
+def run_harvester(creep:Creep):
     """
     Runs a creep as a generic harvester.
     :param creep: The creep to run

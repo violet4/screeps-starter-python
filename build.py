@@ -41,6 +41,7 @@ def possible_rollup_binary_paths(config):
 
     :type config: Configuration
     """
+    return [['npx', 'rollup']]
     npm = config.find_misc_executable('npm')
     if npm is None:
         raise Exception("npm not found! tried paths: {}".format(possible_rollup_binary_paths(config)))
@@ -95,7 +96,7 @@ class Configuration:
     :type ptr: bool
     """
 
-    def __init__(self, base_dir, config_json, clean_build=True, flatten=False):
+    def __init__(self, base_dir, config_json:dict, clean_build=True, flatten=False):
         """
         :type base_dir: str
         :type config_json: dict[str, str | bool]
@@ -157,6 +158,7 @@ class Configuration:
         :rtype: str
         """
         for path in possible_rollup_binary_paths(self):
+            return path
             if path is not None and os.path.exists(path):
                 return path
         return None
@@ -239,13 +241,14 @@ def copy_artifacts(config):
         else:
             raise
 
-    rollup_executable = config.rollup_executable()
-    node_js = config.find_misc_executable('node')
+    # rollup_executable = config.rollup_executable()
+    rollup_executable = ['npx', 'rollup']
+    # node_js = config.find_misc_executable('node')
     if rollup_executable is None:
         raise Exception("rollup not found! tried paths: {}.\nDid you \
         remember to `npm install`?".format(possible_rollup_binary_paths(config)))
     transcrypt_generated_main = os.path.join(config.source_dir, '__target__', 'main.js')
-    args = [rollup_executable] + rollup_arguments + ['--input', transcrypt_generated_main]
+    args = rollup_executable + rollup_arguments + ['--input', transcrypt_generated_main]
 
     result = subprocess.run(args, cwd=config.source_dir, capture_output=True)
     print(result.stderr.decode('utf-8'), file=sys.stderr)
@@ -302,12 +305,18 @@ def upload(config):
 
     post_data = json.dumps({'modules': module_files, 'branch': config.branch}).encode('utf-8')
 
-    headers = {'Content-Type': b'application/json; charset=utf-8'}
+    # headers = {'Content-Type': b'application/json; charset=utf-8'}
+    # if config.token:
+    #     headers['X-Token'] = config.token.encode('utf-8')
+    # else:
+    #     auth_pair = config.username.encode('utf-8') + b':' + config.password.encode('utf-8')
+    #     headers['Authorization'] = b'Basic ' + base64.b64encode(auth_pair)
+    headers = {'Content-Type': 'application/json; charset=utf-8'}
     if config.token:
-        headers['X-Token'] = config.token.encode('utf-8')
+        headers['X-Token'] = config.token
     else:
-        auth_pair = config.username.encode('utf-8') + b':' + config.password.encode('utf-8')
-        headers['Authorization'] = b'Basic ' + base64.b64encode(auth_pair)
+        auth_pair = config.username + ':' + config.password
+        headers['Authorization'] = 'Basic ' + base64.b64encode(auth_pair).decode()
 
     request = urllib.request.Request(post_url, post_data, headers)
     if config.url != 'https://screeps.com':
